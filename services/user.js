@@ -3,6 +3,8 @@ const bcrypt = require('bcryptjs');
 const moment = require('moment');
 const jwt = require('jsonwebtoken');
 const secret = process.env.SECRET || '!"#$%&/()=';
+const path = require('path');
+const fs = require('fs');
 
 
 async function newUser(req, res) {
@@ -63,7 +65,7 @@ async function newUser(req, res) {
 
 async function signIn(req, res) {
 
-    let { email, password_valid } = req.body;
+    let { email, password } = req.body;
 
     let user = await User.findOne({ email: email });
 
@@ -77,7 +79,7 @@ async function signIn(req, res) {
 
     let token = jwt.sign(payload, secret, { expiresIn: '1d' });
 
-    user ? bcrypt.compare(password_valid, user.password_valid).then(access => {
+    user ? bcrypt.compare(password, user.password).then(access => {
 
         access ? res.status(200).send({ user, access, token }) : res.status(201).send({ message: 'Password incorrect' })
 
@@ -86,7 +88,75 @@ async function signIn(req, res) {
 
 }
 
+
+function userPhoto(req, res) {
+
+    let id = req.params.id;
+    let fileName = 'No subido...';
+
+    if (req.user != id) {
+
+        return res.status(200).send({ message: 'Unauthorized' });
+
+    }
+
+
+    if (req.files) {
+
+        const photo = req.files.photo.path;
+
+        const photoSplit = photo.split('.');
+
+        const fileExt = photoSplit[1];
+
+        //get the filename from the request
+        fileName = photoSplit.join('.');
+
+        if (fileExt === 'png' || fileExt === 'jpg' || fileExt === 'gif') {
+            User.findByIdAndUpdate(id, { photo: fileName }, { new: true }, (err, user) => {
+                if (!user) {
+
+                    removeFiles(res, photo, 'removed');
+
+                } else {
+                    res.status(200).send({ user: user });
+                }
+            })
+        } else {
+            res.status(200).send({ message: 'Extensión del archivo no válida' });
+        }
+
+    } else {
+
+        removeFiles(res, req.files, 'removed');
+
+    }
+
+}
+
+function removeFiles(res, photo, message) {
+    fs.unlink(photo, (err) => {
+        return res.status(200).send({ message: message, err });
+    })
+}
+
+function getAvatar(req, res) {
+
+    const photo = req.params.photo;
+
+    const pathFile = './users/' + photo;
+    fs.exists(pathFile, (exists) => {
+        if (exists) {
+            res.sendFile(path.resolve(pathFile));
+        } else {
+            res.status(200).send({ message: 'No existe la imagen...' });
+        }
+    })
+}
+
 module.exports = {
     newUser,
-    signIn
+    signIn,
+    userPhoto,
+    getAvatar
 }

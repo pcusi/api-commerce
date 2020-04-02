@@ -1,4 +1,5 @@
 const mongo = require('mongoose');
+
 const productSchema = mongo.Schema({
 
     category: { type: String, required: true },
@@ -13,4 +14,5 @@ const productSchema = mongo.Schema({
     updated_at: { type: String }
 
 });
+
 module.exports = mongo.model('Product', productSchema);

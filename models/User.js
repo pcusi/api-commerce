@@ -1,4 +1,5 @@
 const mongo = require('mongoose');
+
 const userSchema = mongo.Schema({
 
     email: { type: String, unique: true },
@@ -7,4 +8,5 @@ const userSchema = mongo.Schema({
     photo: { type: [{ type: String }], default: 'null' }
 
 });
+
 module.exports = mongo.model('User', userSchema);

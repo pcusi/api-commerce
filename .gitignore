@@ -1,3 +1,5 @@
-products/
-users/
-node_modules/
+node_modules/*
+users/*
+products/*
+package-lock.json
+package.json
